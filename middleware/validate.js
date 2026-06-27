@@ -3,20 +3,21 @@ import { ZodError } from 'zod';
 
 /**
  * Higher-order middleware to validate incoming request data against a Zod schema.
- * @param {ZodSchema} schema - The expected Zod schema for the request body.
  */
 export const validate = (schema) => (req, res, next) => {
     try {
         // Parse and validate req.body against the provided schema
-        // .parse() throws an error if validation fails
         schema.parse(req.body);
         
-        // If validation succeeds, move gracefully to the next step/route handler
+        // If validation succeeds, move to the next route handler
         next();
     } catch (error) {
+        // Check if the error is a true Zod Validation Error
         if (error instanceof ZodError) {
-            // Flatten Zod's complex error array into an easy-to-read client payload
-            const errorMessages = error.errors.map((err) => ({
+            // Zod stores errors inside either error.errors or error.issues depending on version
+            const issues = error.errors || error.issues || [];
+            
+            const errorMessages = issues.map((err) => ({
                 field: err.path.join('.'),
                 message: err.message,
             }));
@@ -28,7 +29,7 @@ export const validate = (schema) => (req, res, next) => {
             });
         }
         
-        // If it's a completely unexpected error, pass it down the line
+        // If it's an unexpected system error, pass it along
         next(error);
     }
 };
