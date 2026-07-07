@@ -6,6 +6,8 @@ import { applySecurityShield } from './middleware/security.js';
 import { registerSchema } from './schemas/auth.js'; // Cleanly imported schema
 import { AppError } from './utils/appError.js'; // New Custom Error Class
 import { globalErrorHandler } from './middleware/errorHandler.js'; // New Global Safety Net
+import { connectDB, closeDB } from './config/db.js';
+import { registerUser } from './controllers/authController.js';
 
 const app = express();
 
@@ -20,12 +22,16 @@ const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
 // Initialize Database connection before listening to traffic
+/*
 let db;
 try {
     db = await connectDB();
 } catch (err) {
-    console.error('Failed to initialize application database layers.');
+    console.error('\n❌ --- DATABASE INITIALIZATION CRASH --- ❌');
+    console.error(err); // This will force Node to print the exact error trace
+    console.error('-----------------------------------------\n');
 }
+*/
 
 // Pass db instance down your pipeline via standard Express middleware context
 app.use((req, res, next) => {
@@ -45,20 +51,8 @@ app.get('/api/test-error', (req, res, next) => {
 });
 
 // Guarded Route (Notice how incredibly clean this declaration is now)
-app.post('/api/auth/register', validate(registerSchema), async (req, res, next) => {
-    try {
-        const { username, email } = req.body;
-        
-        // Tomorrow we will perform full inserts, but let's test database readiness right now
-        res.status(201).json({
-            status: 'success',
-            message: 'Database layer online. Payload validated safely.',
-            data: { username, email }
-        });
-    } catch (error) {
-        next(error);
-    }
-});
+//  New clean way (Using your imported registerUser controller)
+app.post('/api/auth/register', validate(registerSchema), registerUser);
 
 // CRUCIAL: Global Error Handler MUST be the last middleware in the file
 app.use(globalErrorHandler);
