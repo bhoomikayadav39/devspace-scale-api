@@ -1,7 +1,7 @@
 // controllers/authController.js
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt'; // 🚀 Import bcrypt
 
-// 🚀 Keep it completely empty, just like a fresh, blank database table!
 const mockUserDatabase = [];
 
 export const registerUser = async (req, res, next) => {
@@ -16,19 +16,24 @@ export const registerUser = async (req, res, next) => {
             });
         }
 
-        // We temporarily store the password dynamically so the login function can verify it
+        // 1. Generate a salt and hash the password before saving (10 salt rounds is standard)
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // 2. Save the user with the HASHED password
         const newUser = {
             id: `mock_id_${Math.random().toString(36).substr(2, 9)}`,
             username,
             email,
-            password, // Stored dynamically in memory for our login check
+            password: hashedPassword, // 🔒 Securely encrypted!
             createdAt: new Date().toISOString()
         };
         
         mockUserDatabase.push(newUser);
-        console.log(`[MOCK DB] New User Saved Dynamically:`, username);
+        
+        // Log the hash to your terminal so you can see what it looks like!
+        console.log(`[MOCK DB] User registered. Saved Password Hash:`, hashedPassword);
 
-        // Send response (Notice we still don't send the password back to the client!)
         res.status(201).json({
             status: 'success',
             message: 'User account created successfully.',
@@ -36,8 +41,7 @@ export const registerUser = async (req, res, next) => {
                 user: {
                     id: newUser.id,
                     username: newUser.username,
-                    email: newUser.email,
-                    createdAt: newUser.createdAt
+                    email: newUser.email
                 } 
             }
         });
@@ -51,10 +55,10 @@ export const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        // Scans the array for whatever user was just registered!
         const user = mockUserDatabase.find(u => u.email === email);
 
-        if (!user || user.password !== password) {
+        // 1. Security Check: If user exists, use bcrypt to compare plain-text login password with the stored hash
+        if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({
                 status: 'fail',
                 message: 'Invalid email or password.'
