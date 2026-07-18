@@ -9,6 +9,7 @@ import { globalErrorHandler } from './middleware/errorHandler.js'; // New Global
 import { connectDB, closeDB } from './config/db.js';
 import { registerUser } from './controllers/authController.js';
 import { protect } from './middleware/auth.js';
+import { uploadResumeRecord, MyResumes } from './controllers/resumeController.js';
 
 const app = express();
 
@@ -63,7 +64,9 @@ app.get('/api/users/profile', protect, (req, res) => {
         authenticatedUser: req.user // Contains the id and email extracted from the token!
     });
 });
-
+// 🚀 NEW: Secured Resume Routing Core
+app.post('/api/resumes/upload', protect, uploadResumeRecord);
+app.get('/api/resumes/my-resumes', protect, MyResumes);
 // CRUCIAL: Global Error Handler MUST be the last middleware in the file
 app.use(globalErrorHandler);
 
