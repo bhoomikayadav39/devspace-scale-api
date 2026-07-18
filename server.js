@@ -8,6 +8,7 @@ import { AppError } from './utils/appError.js'; // New Custom Error Class
 import { globalErrorHandler } from './middleware/errorHandler.js'; // New Global Safety Net
 import { connectDB, closeDB } from './config/db.js';
 import { registerUser } from './controllers/authController.js';
+import { protect } from './middleware/auth.js';
 
 const app = express();
 
@@ -53,6 +54,15 @@ app.get('/api/test-error', (req, res, next) => {
 // Guarded Route (Notice how incredibly clean this declaration is now)
 //  New clean way (Using your imported registerUser controller)
 app.post('/api/auth/register', validate(registerSchema), registerUser);
+app.post('/api/auth/login', loginUser);
+// 🚀 NEW: A completely protected user profile dashboard route
+app.get('/api/users/profile', protect, (req, res) => {
+    res.status(200).json({
+        status: 'success',
+        message: 'Welcome to your secure profile dashboard!',
+        authenticatedUser: req.user // Contains the id and email extracted from the token!
+    });
+});
 
 // CRUCIAL: Global Error Handler MUST be the last middleware in the file
 app.use(globalErrorHandler);
