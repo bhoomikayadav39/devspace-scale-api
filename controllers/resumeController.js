@@ -51,3 +51,73 @@ export const MyResumes = async (req, res, next) => {
         next(error);
     }
 };
+
+// 🚀 3. Analyze and Optimize a Resume against target keywords
+export const optimizeResume = async (req, res, next) => {
+    try {
+        const { resumeId, targetJobDescription, targetKeywords } = req.body;
+
+        if (!resumeId || !targetKeywords || !Array.isArray(targetKeywords)) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Please provide a valid resumeId and an array of targetKeywords.'
+            });
+        }
+
+        // 1. Locate the specific resume and verify ownership
+        const resume = mockResumeDatabase.find(r => r.id === resumeId && r.userId === req.user.id);
+
+        if (!resume) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Resume not found or you do not have permission to access it.'
+            });
+        }
+
+        // 2. Optimization Engine: Calculate text matches cleanly
+        const currentSkills = resume.skillsDetected.map(s => s.toLowerCase());
+        const matchedKeywords = targetKeywords.filter(keyword => 
+            currentSkills.includes(keyword.toLowerCase())
+        );
+        
+        const missingKeywords = targetKeywords.filter(keyword => 
+            !currentSkills.includes(keyword.toLowerCase())
+        );
+
+        // Calculate direct matching percentage
+        const matchScore = targetKeywords.length > 0 
+            ? Math.round((matchedKeywords.length / targetKeywords.length) * 100) 
+            : 0;
+
+        // 3. Generate dynamic tailoring recommendations based on score levels
+        let recommendation = "";
+        if (matchScore >= 80) {
+            recommendation = "Excellent match! Your resume is highly optimized for this target role.";
+        } else if (matchScore >= 50) {
+            recommendation = `Good baseline, but you should explicitly weave in these missing skills: ${missingKeywords.join(', ')}.`;
+        } else {
+            recommendation = `Critical gap detected. Strongly consider restructuring your experience to prominently highlight: ${missingKeywords.join(', ')}.`;
+        }
+
+        // 4. Save analysis details directly back onto the specific record item
+        resume.lastAnalysis = {
+            matchScore: `${matchScore}%`,
+            targetJobDescription: targetJobDescription || "Not provided",
+            matchedKeywords,
+            missingKeywords,
+            recommendation,
+            analyzedAt: new Date().toISOString()
+        };
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Resume analysis and optimization metrics generated.',
+            data: {
+                analysis: resume.lastAnalysis
+            }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
