@@ -10,7 +10,7 @@ import { connectDB, closeDB } from './config/db.js';
 import { registerUser } from './controllers/authController.js';
 import { protect } from './middleware/auth.js';
 import { uploadResumeRecord, MyResumes, optimizeResume } from './controllers/resumeController.js';
-import { createApplication, getMyApplications } from './controllers/applicationController.js';
+import { createApplication, getMyApplications, updateApplicationStatus} from './controllers/applicationController.js';
 
 const app = express();
 
@@ -72,6 +72,8 @@ app.post('/api/resumes/optimize', protect, optimizeResume);
 // 🚀 NEW: Secured Job Application Tracker Routes
 app.post('/api/applications/create', protect, createApplication);
 app.get('/api/applications/my-applications', protect, getMyApplications);
+// The :id is a dynamic parameter the controller will read
+app.patch('/api/applications/:id/status', protect, updateApplicationStatus);
 // CRUCIAL: Global Error Handler MUST be the last middleware in the file
 app.use(globalErrorHandler);
 

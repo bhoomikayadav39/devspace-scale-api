@@ -53,3 +53,41 @@ export const getMyApplications = async (req, res, next) => {
         next(error);
     }
 };
+// Add this function to controllers/applicationController.js
+
+// 🚀 3. Update the status of a specific job application
+export const updateApplicationStatus = async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        const { id } = req.params; // We grab the application ID from the URL
+
+        if (!status) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Please provide a new status to update.'
+            });
+        }
+
+        // 1. Locate the app: Check that it exists AND belongs to the logged-in user
+        const application = mockApplicationDatabase.find(app => app.id === id && app.userId === req.user.id);
+
+        if (!application) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Application not found or access denied.'
+            });
+        }
+
+        // 2. Perform the update
+        application.status = status;
+        application.updatedAt = new Date().toISOString();
+
+        res.status(200).json({
+            status: 'success',
+            message: `Application status updated to '${status}'.`,
+            data: { application }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
