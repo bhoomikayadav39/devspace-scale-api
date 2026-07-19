@@ -10,7 +10,7 @@ import { connectDB, closeDB } from './config/db.js';
 import { registerUser } from './controllers/authController.js';
 import { protect } from './middleware/auth.js';
 import { uploadResumeRecord, MyResumes, optimizeResume } from './controllers/resumeController.js';
-
+import { createApplication, getMyApplications } from './controllers/applicationController.js';
 
 const app = express();
 
@@ -69,6 +69,9 @@ app.get('/api/users/profile', protect, (req, res) => {
 app.post('/api/resumes/upload', protect, uploadResumeRecord);
 app.get('/api/resumes/my-resumes', protect, MyResumes);
 app.post('/api/resumes/optimize', protect, optimizeResume);
+// 🚀 NEW: Secured Job Application Tracker Routes
+app.post('/api/applications/create', protect, createApplication);
+app.get('/api/applications/my-applications', protect, getMyApplications);
 // CRUCIAL: Global Error Handler MUST be the last middleware in the file
 app.use(globalErrorHandler);
 
